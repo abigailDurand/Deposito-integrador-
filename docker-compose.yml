@@ -1,0 +1,3 @@
+# Orquestación local de los microservicios del banco.
+# Añade aquí cada servicio a medida que esté disponible.
+services: {}
