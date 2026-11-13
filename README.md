@@ -16,17 +16,42 @@ Repositorio integrador de los microservicios del banco.
 ## Servicios
 
 Cada carpeta de `services-config/` corresponde al campo `servicio` del aviso `servicio-actualizado`
-y guarda en `version.env` la imagen y el tag fijados.
+y guarda en `version.env` la imagen y el tag fijados. Cuando un servicio publica una imagen nueva,
+avisa al integrador y el workflow `Recibir actualizacion` fija la versión en
+`services-config/<servicio>/version.env`.
 
-| Carpeta | Servicio | Repositorio | Notas |
+| Carpeta | Valor de `servicio` en el aviso | Responsable | Descripción |
 |---|---|---|---|
-| `deposito-service/` | Depósitos PEN y USD en un solo servicio | `abigailDurand/Deposito-Arnes` | Imagen `ghcr.io/abigaildurand/deposito-service`; usa billetera PEN y billetera USD |
-| `depositos-pen/` | Depósitos PEN | _otro equipo_ | |
-| `depositos-usd/` | Depósitos USD | _otro equipo_ | |
-| `billetera-pen/` | Billetera PEN | | |
-| `billetera-usd/` | Billetera USD | | |
-| `transferencias/` | Transferencias | | |
-| `usuarios/` | Usuarios | | |
+| `deposito-service/` | `deposito-service` | Equipo deposito-service (`abigailDurand/Deposito-Arnes`) | Depósitos PEN y USD en un solo servicio; imagen `ghcr.io/abigaildurand/deposito-service` |
+| `depositos-pen/` | `depositos-pen` | Por asignar | Depósitos en soles |
+| `depositos-usd/` | `depositos-usd` | Por asignar | Depósitos en dólares |
+| `billetera-pen/` | `billetera-pen` | Por asignar | Billetera en soles |
+| `billetera-usd/` | `billetera-usd` | Por asignar | Billetera en dólares |
+| `transferencias/` | `transferencias` | Por asignar | Transferencias |
+| `usuarios/` | `usuarios` | Por asignar | Usuarios |
+
+> Cada equipo debe enviar **su propio** valor de `servicio`. Si dos equipos usan el mismo, se sobrescriben la versión fijada.
+
+### Cómo avisar al integrador desde un servicio
+
+1. Crear un token *fine-grained* con acceso solo a este repo y permiso **Contents: Read and write**.
+2. Guardarlo en el repo del servicio como secreto de Actions llamado `INTEGRADOR_TOKEN`.
+3. Agregar este paso al final del workflow, después de publicar la imagen:
+
+```yaml
+      - name: Avisar al integrador
+        env:
+          GH_TOKEN: ${{ secrets.INTEGRADOR_TOKEN }}
+        run: |
+          gh api repos/abigailDurand/Deposito-integrador-/dispatches \
+            -f event_type=servicio-actualizado \
+            -f "client_payload[servicio]=<valor-de-la-tabla>" \
+            -f "client_payload[imagen]=ghcr.io/<owner>/<imagen>" \
+            -f "client_payload[tag]=${{ github.sha }}" \
+            -f "client_payload[commit]=${{ github.sha }}"
+```
+
+`servicio` solo acepta minúsculas, números y guiones. Los avisos se ven en la pestaña **Actions → Recibir actualizacion** de este repo.
 
 ## Uso local
 
