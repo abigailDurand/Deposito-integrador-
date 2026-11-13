@@ -59,3 +59,27 @@ avisa al integrador y el workflow `Recibir actualizacion` fija la versión en
 cp .env.example .env
 docker compose up -d
 ```
+
+## Kubernetes
+
+Los manifiestos usan Kustomize: `kubernetes/base/<servicio>/` tiene el Deployment, Service y ConfigMap de cada
+servicio, y `kubernetes/overlays/` ajusta por entorno (`desarrollo` → namespace `banco-desarrollo`, 1 réplica;
+`produccion` → namespace `banco`, 2 réplicas).
+
+Convención para que los servicios se encuentren entre sí: cada uno publica un Service con el **nombre de su carpeta**
+y **puerto 80** (p. ej. `http://deposito-service`, `http://billetera-pen`).
+
+```bash
+# Ver lo que se aplicaría
+kubectl kustomize kubernetes/overlays/desarrollo
+
+# Secretos (una vez por namespace; plantilla en kubernetes/base/deposito-service/secret.example.yaml)
+kubectl create namespace banco-desarrollo
+kubectl -n banco-desarrollo create secret generic deposito-service-secrets \
+  --from-literal=DATABASE_URL='postgres://...' \
+  --from-literal=JWT_PUBLIC_KEY="$(cat usuario-service.pub.pem)" \
+  --from-literal=BILLETERA_TOKEN='...'
+
+# Desplegar
+kubectl apply -k kubernetes/overlays/desarrollo
+```
