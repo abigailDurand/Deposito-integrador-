@@ -1,0 +1,99 @@
+# deposito-service: depósitos PEN y USD (repo abigailDurand/Deposito-Arnes).
+# La imagen y el tag se fijan en ../kustomization.yaml (images:), no aquí.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deposito-service
+  labels:
+    app.kubernetes.io/name: deposito-service
+    app.kubernetes.io/part-of: banco
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: deposito-service
+  # Rolling update sin cortar peticiones: primero sube el pod nuevo, luego baja el viejo.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: deposito-service
+        app.kubernetes.io/part-of: banco
+    spec:
+      # SPEC-13 CI-R11: el servicio corta su apagado a los APAGADO_TIMEOUT_MS (10 s), por debajo de esto.
+      terminationGracePeriodSeconds: 30
+      # Solo hace falta si el paquete de GHCR es privado. Si el secreto no existe, Kubernetes lo ignora.
+      imagePullSecrets:
+        - name: ghcr-cred
+      securityContext:
+        # La imagen corre como el usuario "node" (uid 1000) de node:22-alpine.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      # SPEC-13 CI-R07: migra el esquema antes de arrancar. Es idempotente y usa advisory lock,
+      # así que varias réplicas a la vez no se pisan.
+      initContainers:
+        - name: migrar
+          image: ghcr.io/abigaildurand/deposito-service
+          command: ["node", "scripts/migrar.js"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: deposito-service-secrets
+                  key: DATABASE_URL
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+      containers:
+        - name: deposito-service
+          image: ghcr.io/abigaildurand/deposito-service
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: deposito-service-config
+            - secretRef:
+                name: deposito-service-secrets
+          # GET /health es la única ruta sin token (SPEC-00 §5).
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

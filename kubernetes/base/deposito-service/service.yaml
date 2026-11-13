@@ -1,0 +1,18 @@
+# Los demás microservicios del clúster llegan a deposito-service por:
+#   http://deposito-service            (mismo namespace)
+#   http://deposito-service.<namespace>.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: deposito-service
+  labels:
+    app.kubernetes.io/name: deposito-service
+    app.kubernetes.io/part-of: banco
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: deposito-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

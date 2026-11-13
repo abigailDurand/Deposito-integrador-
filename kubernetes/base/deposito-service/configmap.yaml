@@ -1,0 +1,32 @@
+# Variables no secretas de deposito-service (ver .env.example de Deposito-Arnes).
+# Los secretos (DATABASE_URL, JWT_PUBLIC_KEY, BILLETERA_TOKEN, ...) van en el Secret
+# deposito-service-secrets; ver secret.example.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deposito-service-config
+  labels:
+    app.kubernetes.io/name: deposito-service
+    app.kubernetes.io/part-of: banco
+data:
+  PORT: "3000"
+  LOG_LEVEL: info
+  TRUST_PROXY: "1"
+  MANIFEST_PATH: specs-v2/manifest.yaml
+
+  JWT_ALGORITHMS: RS256
+  JWT_ISSUER: usuario-service
+  JWT_AUDIENCE: banco-api
+
+  IDEMPOTENCIA_DIAS: "7"
+
+  # Services de los equipos de billetera dentro del clúster (convención: puerto 80).
+  BILLETERA_URL: http://billetera-pen
+  BILLETERA_USD_URL: http://billetera-usd
+  BILLETERA_TIMEOUT_MS: "5000"
+
+  RECONCILIACION_INTERVALO_MS: "30000"
+  RECONCILIACION_ANTIGUEDAD_MS: "10000"
+  RECONCILIACION_ALERTA_MS: "3600000"
+
+  APAGADO_TIMEOUT_MS: "10000"

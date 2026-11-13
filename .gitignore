@@ -13,3 +13,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Secretos de Kubernetes con valores reales (usar secret.example.yaml como plantilla)
+kubernetes/**/secret.yaml
+kubernetes/**/*-secret.yaml
