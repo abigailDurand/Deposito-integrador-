@@ -6,7 +6,7 @@ Repositorio integrador de los microservicios del banco.
 
 | Carpeta | Propósito |
 |---|---|
-| `services-config/` | Configuración de cada microservicio (usuarios, depósitos PEN/USD, billeteras PEN/USD, transferencias) |
+| `services-config/` | Configuración de cada microservicio (ver tabla de servicios) |
 | `kubernetes/base/` | Manifiestos base de Kubernetes |
 | `kubernetes/overlays/` | Ajustes por entorno (`desarrollo`, `produccion`) |
 | `contracts/` | Contratos entre servicios (OpenAPI, eventos, etc.) |
@@ -15,17 +15,20 @@ Repositorio integrador de los microservicios del banco.
 
 ## Servicios
 
-Cada servicio tiene su carpeta en `services-config/`. Cuando un servicio publica una imagen nueva, avisa al integrador y el workflow `Recibir actualizacion` fija la versión en `services-config/<servicio>/version.env`.
+Cada carpeta de `services-config/` corresponde al campo `servicio` del aviso `servicio-actualizado`
+y guarda en `version.env` la imagen y el tag fijados. Cuando un servicio publica una imagen nueva,
+avisa al integrador y el workflow `Recibir actualizacion` fija la versión en
+`services-config/<servicio>/version.env`.
 
 | Carpeta | Valor de `servicio` en el aviso | Responsable | Descripción |
 |---|---|---|---|
-| `deposito-service/` | `deposito-service` | Equipo deposito-service | Depósitos PEN y USD en un solo servicio |
+| `deposito-service/` | `deposito-service` | Equipo deposito-service (`abigailDurand/Deposito-Arnes`) | Depósitos PEN y USD en un solo servicio; imagen `ghcr.io/abigaildurand/deposito-service` |
 | `depositos-pen/` | `depositos-pen` | Por asignar | Depósitos en soles |
 | `depositos-usd/` | `depositos-usd` | Por asignar | Depósitos en dólares |
-| `usuarios/` | `usuarios` | Por asignar | Usuarios |
 | `billetera-pen/` | `billetera-pen` | Por asignar | Billetera en soles |
 | `billetera-usd/` | `billetera-usd` | Por asignar | Billetera en dólares |
 | `transferencias/` | `transferencias` | Por asignar | Transferencias |
+| `usuarios/` | `usuarios` | Por asignar | Usuarios |
 
 > Cada equipo debe enviar **su propio** valor de `servicio`. Si dos equipos usan el mismo, se sobrescriben la versión fijada.
 
